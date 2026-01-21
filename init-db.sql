@@ -1,0 +1,13 @@
+-- STX Atomic Swap Database Initialization
+-- Placeholder for any database-backed tooling.
+
+-- Example (PostgreSQL):
+-- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- CREATE TABLE IF NOT EXISTS swap_events (
+--   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--   swap_id TEXT NOT NULL,
+--   chain TEXT NOT NULL,
+--   event_type TEXT NOT NULL,
+--   payload JSONB,
+--   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- );
