@@ -10,10 +10,20 @@
 
 (define-map swap-intents {sender: principal, hash: (buff 32)} {expiration-height: uint, amount: uint, recipient: principal})
 
+;; Read-only function to get swap intent details
+;; @param hash: The hash of the preimage
+;; @param sender: The principal who initiated the swap
+;; @returns (optional {expiration-height: uint, amount: uint, recipient: principal})
 (define-read-only (get-swap-intent (hash (buff 32)) (sender principal))
 	(map-get? swap-intents {sender: sender, hash: hash})
 )
 
+;; Registers a new swap intent by locking STX in the contract.
+;; @param hash: The hash of the secret preimage
+;; @param expiration-height: The block height at which the swap expires
+;; @param amount: The amount of STX to lock
+;; @param recipient: The principal who can claim the STX with the preimage
+;; @returns (ok true) or error
 (define-public (register-swap-intent (hash (buff 32)) (expiration-height uint) (amount uint) (recipient principal))
 	(begin
 		(asserts! (is-eq (len hash) u32) err-invalid-hash-length)
@@ -25,6 +35,9 @@
 	)
 )
 
+;; Cancels a swap intent and refunds the STX to the sender if the expiration height has passed.
+;; @param hash: The hash identifying the swap
+;; @returns (ok true) or error
 (define-public (cancel-swap-intent (hash (buff 32)))
 	(let
 		(
@@ -39,6 +52,10 @@
 	)
 )
 
+;; Completes a swap by providing the correct preimage, transferring STX to the recipient.
+;; @param sender: The creator of the swap intent
+;; @param preimage: The secret that hashes to the swap hash
+;; @returns (ok true) or error
 (define-public (swap (sender principal) (preimage (buff 64)))
 	(let
 		(
