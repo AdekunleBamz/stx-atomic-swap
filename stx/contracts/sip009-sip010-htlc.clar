@@ -57,17 +57,17 @@
 	)
 )
 
-(define-public (register-swap-intent-sip009 (hash (buff 32)) (expiration-height uint) (amount uint) (recipient principal) (asset-contract <sip009-transfer-trait>))
+(define-public (register-swap-intent-sip009 (hash (buff 32)) (expiration-height uint) (token-id uint) (recipient principal) (asset-contract <sip009-transfer-trait>))
 	(begin
-		(try! (register-swap-intent hash expiration-height amount recipient (contract-of asset-contract)))
-		(contract-call? asset-contract transfer amount tx-sender (as-contract tx-sender))
+		(try! (register-swap-intent hash expiration-height token-id recipient (contract-of asset-contract)))
+		(contract-call? asset-contract transfer token-id tx-sender (as-contract tx-sender))
 	)
 )
 
-(define-public (register-swap-intent-sip010 (hash (buff 32)) (expiration-height uint) (token-id uint) (recipient principal) (asset-contract <sip010-transfer-trait>))
+(define-public (register-swap-intent-sip010 (hash (buff 32)) (expiration-height uint) (amount uint) (recipient principal) (asset-contract <sip010-transfer-trait>))
 	(begin
-		(try! (register-swap-intent hash expiration-height token-id recipient (contract-of asset-contract)))
-		(contract-call? asset-contract transfer token-id tx-sender (as-contract tx-sender) none)
+		(try! (register-swap-intent hash expiration-height amount recipient (contract-of asset-contract)))
+		(contract-call? asset-contract transfer amount tx-sender (as-contract tx-sender) none)
 	)
 )
 
