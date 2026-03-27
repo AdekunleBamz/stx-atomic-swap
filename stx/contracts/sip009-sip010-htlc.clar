@@ -53,21 +53,34 @@
 		(asserts! (< block-height expiration-height) err-expiry-in-past)
 		(asserts! (is-some (map-get? token-contract-whitelist asset-contract)) err-asset-contract-not-whitelisted)
 		(asserts! (map-insert swap-intents {sender: tx-sender, hash: hash} {expiration-height: expiration-height, amount-or-token-id: amount-or-token-id, recipient: recipient, asset-contract: asset-contract}) err-swap-intent-already-exists)
+		(print {action: "register-swap-intent", hash: hash, expiration-height: expiration-height, amount-or-token-id: amount-or-token-id, recipient: recipient, asset-contract: asset-contract})
 		(ok true)
 	)
 )
 
-(define-public (register-swap-intent-sip009 (hash (buff 32)) (expiration-height uint) (amount uint) (recipient principal) (asset-contract <sip009-transfer-trait>))
+;; Registers a swap intent for a SIP-009 NFT.
+;; @param hash: The hash of the secret preimage
+;; @param expiration-height: The block height expiration
+;; @param token-id: The NFT ID to lock
+;; @param recipient: The intended recipient
+;; @param asset-contract: The SIP-009 contract principal
+(define-public (register-swap-intent-sip009 (hash (buff 32)) (expiration-height uint) (token-id uint) (recipient principal) (asset-contract <sip009-transfer-trait>))
 	(begin
-		(try! (register-swap-intent hash expiration-height amount recipient (contract-of asset-contract)))
-		(contract-call? asset-contract transfer amount tx-sender (as-contract tx-sender))
+		(try! (register-swap-intent hash expiration-height token-id recipient (contract-of asset-contract)))
+		(contract-call? asset-contract transfer token-id tx-sender (as-contract tx-sender))
 	)
 )
 
-(define-public (register-swap-intent-sip010 (hash (buff 32)) (expiration-height uint) (token-id uint) (recipient principal) (asset-contract <sip010-transfer-trait>))
+;; Registers a swap intent for SIP-010 Fungible Tokens.
+;; @param hash: The hash of the secret preimage
+;; @param expiration-height: The block height expiration
+;; @param amount: The amount of tokens to lock
+;; @param recipient: The intended recipient
+;; @param asset-contract: The SIP-010 contract principal
+(define-public (register-swap-intent-sip010 (hash (buff 32)) (expiration-height uint) (amount uint) (recipient principal) (asset-contract <sip010-transfer-trait>))
 	(begin
-		(try! (register-swap-intent hash expiration-height token-id recipient (contract-of asset-contract)))
-		(contract-call? asset-contract transfer token-id tx-sender (as-contract tx-sender) none)
+		(try! (register-swap-intent hash expiration-height amount recipient (contract-of asset-contract)))
+		(contract-call? asset-contract transfer amount tx-sender (as-contract tx-sender) none)
 	)
 )
 
@@ -79,10 +92,13 @@
 		(asserts! (is-eq (get asset-contract swap-intent) asset-contract) err-invalid-asset-contract)
 		(asserts! (>= block-height (get expiration-height swap-intent)) err-swap-intent-not-expired)
 		(map-delete swap-intents {sender: tx-sender, hash: hash})
+		(print {action: "cancel-swap-intent", hash: hash, amount-or-token-id: (get amount-or-token-id swap-intent), asset-contract: asset-contract})
 		(ok (get amount-or-token-id swap-intent))
 	)
 )
 
+;; Cancels a SIP-009 NFT swap intent.
+;; Refunds the NFT to the original sender if expired.
 (define-public (cancel-swap-intent-sip009 (hash (buff 32)) (asset-contract <sip009-transfer-trait>))
 	(let
 		(
@@ -93,6 +109,8 @@
 	)
 )
 
+;; Cancels a SIP-010 FT swap intent.
+;; Refunds the tokens to the original sender if expired.
 (define-public (cancel-swap-intent-sip010 (hash (buff 32)) (asset-contract <sip010-transfer-trait>))
 	(let
 		(
@@ -112,10 +130,13 @@
 		(asserts! (is-eq (get asset-contract swap-intent) asset-contract) err-invalid-asset-contract)
 		(asserts! (< block-height (get expiration-height swap-intent)) err-swap-intent-expired)
 		(map-delete swap-intents {sender: sender, hash: hash})
+		(print {action: "swap", hash: hash, preimage: preimage, amount-or-token-id: (get amount-or-token-id swap-intent), asset-contract: asset-contract})
 		(ok swap-intent)
 	)
 )
 
+;; Completes a SIP-009 NFT swap.
+;; Transfers the NFT to the recipient if the preimage is correct.
 (define-public (swap-sip009 (sender principal) (preimage (buff 64)) (asset-contract <sip009-transfer-trait>))
 	(let
 		(
@@ -125,6 +146,8 @@
 	)
 )
 
+;; Completes a SIP-010 FT swap.
+;; Transfers the tokens to the recipient if the preimage is correct.
 (define-public (swap-sip010 (sender principal) (preimage (buff 64)) (asset-contract <sip010-transfer-trait>))
 	(let
 		(
